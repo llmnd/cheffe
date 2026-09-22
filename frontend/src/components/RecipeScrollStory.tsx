@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type RecipeStoryItem = {
   title: string;
@@ -18,36 +18,49 @@ type RecipeScrollStoryProps = {
 };
 
 export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
-  const visibleRecipes = recipes.slice(0, 3);
-  const [visibleSlides, setVisibleSlides] = useState<Record<string, boolean>>(() =>
-    visibleRecipes[0] ? { [visibleRecipes[0].slug]: true } : {},
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleSlides, setVisibleSlides] = useState<Record<string, boolean>>({});
+
+  const slugsKey = useMemo(() => recipes.map((r) => r.slug).join("|"), [recipes]);
 
   useEffect(() => {
-    if (visibleRecipes[0]) {
-      setVisibleSlides((current) => ({ ...current, [visibleRecipes[0].slug]: true }));
-    }
+    if (recipes.length === 0) return;
+
+    setVisibleSlides((current) => {
+      const first = recipes[0].slug;
+      if (current[first]) return current;
+      return { ...current, [first]: true };
+    });
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const slug = entry.target.getAttribute("data-recipe-slug");
-            if (slug) setVisibleSlides((current) => ({ ...current, [slug]: true }));
+            if (slug) {
+              setVisibleSlides((current) =>
+                current[slug] ? current : { ...current, [slug]: true },
+              );
+            }
           }
         });
       },
-      { threshold: 0.35 },
+      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" },
     );
 
-    document.querySelectorAll<HTMLElement>("[data-recipe-slug]").forEach((slide) => observer.observe(slide));
+    const root = containerRef.current ?? document;
+    const slides = root.querySelectorAll<HTMLElement>("[data-recipe-slug]");
+    slides.forEach((slide) => observer.observe(slide));
+
     return () => observer.disconnect();
-  }, [visibleRecipes.length]);
+  }, [slugsKey, recipes]);
+
+  if (recipes.length === 0) return null;
 
   return (
     <section id="recettes" className="relative bg-[#e6d9ca] text-[#171412]">
       <div className="section-shell py-24 md:py-32">
-        <div className="max-w-3xl reveal">
+        <div className="reveal max-w-3xl">
           <p className="eyebrow text-[0.65rem] uppercase tracking-[0.28em] text-[#8b5e3c]">
             Recettes &amp; astuces
           </p>
@@ -60,8 +73,8 @@ export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
         </div>
       </div>
 
-      <div className="snap-y snap-mandatory">
-        {visibleRecipes.map((recipe, index) => (
+      <div ref={containerRef} className="snap-y snap-mandatory">
+        {recipes.map((recipe, index) => (
           <article
             data-recipe-slug={recipe.slug}
             key={recipe.slug}
@@ -69,7 +82,6 @@ export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
               visibleSlides[recipe.slug] ? "is-visible" : ""
             }`}
           >
-            {/* Filet décoratif en fond */}
             <div className="pointer-events-none absolute inset-x-0 top-1/2 hidden h-px -translate-y-1/2 bg-[#171412]/8 md:block" />
 
             <div className="section-shell relative grid w-full gap-12 md:grid-cols-[0.85fr_1.15fr] md:items-center md:gap-20">
@@ -78,13 +90,8 @@ export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
                   index % 2 ? "md:order-2" : "md:order-1"
                 }`}
               >
-                {/* Anneau pointillé tournant */}
                 <div className="animate-spin-slow absolute inset-[1%] rounded-full border border-dashed border-[#8b5e3c]/30" />
-
-                {/* Disque de fond */}
                 <div className="absolute inset-[8%] rounded-full bg-[#f8f2eb] shadow-[0_25px_60px_rgba(36,25,18,0.18)]" />
-
-                {/* Assiette */}
                 <div className="absolute inset-[13%] overflow-hidden rounded-full border-[10px] border-[#f8f2eb] shadow-inner md:border-[14px]">
                   <Image
                     src={recipe.image}
@@ -94,8 +101,6 @@ export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
                     className="object-cover"
                   />
                 </div>
-
-                {/* Badge plat */}
                 <span className="absolute bottom-[3%] left-1/2 -translate-x-1/2 rounded-full bg-[#171412] px-5 py-2 text-[0.55rem] uppercase tracking-[0.24em] text-[#f8f2ec] shadow-lg">
                   Plat {String(index + 1).padStart(2, "0")}
                 </span>

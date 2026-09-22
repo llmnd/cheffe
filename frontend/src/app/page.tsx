@@ -9,70 +9,79 @@ import SiteHeader from "@/components/SiteHeader";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
+/* ------------------------------------------------------------------ */
+/*  Images produits Cloudinary (vraies créations, pas de stock)       */
+/* ------------------------------------------------------------------ */
+const CLOUD = {
+  hero: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790092664/oiumaipitkvhi8gflno0.jpg",
+  courge: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790093767/cim5mhtkiyjzt0615esx.jpg",
+  bissap: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790093938/eat1dxbao0ac0pjw39kl.jpg",
+  tamkharite: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790094000/uehcjlmidnfq2w4dobcx.jpg",
+  mouhamsa: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790094081/chxacgqz5pirqhormtrq.jpg",
+};
+
 type CreationApiItem = { title: string; slug: string; description: string; image?: string | null; cover_image?: string | null };
 type RecipeApiItem = { title: string; slug: string; excerpt?: string | null; content?: string | null; preparation_time?: string | null; difficulty?: string | null; cover_image?: string | null; og_image?: string | null };
 type ProjectApiItem = { title: string; category?: string | null; images?: string[] | null; image?: string | null };
 type JournalApiItem = { title: string; slug: string; created_at: string };
 type GalleryApiItem = { image_url?: string | null; video_url?: string | null };
 
+/* ------------------------------------------------------------------ */
+/*  Fallbacks — UNIQUEMENT ce que tu veux voir si l'API est HS        */
+/* ------------------------------------------------------------------ */
 const fallbackCreations = [
   {
-    title: "Thiéboudiène revisité",
-    slug: "thieboudiene-revisite",
-    description: "Saveurs traditionnelles, interprétation contemporaine. Un plat qui traverse les époques sans jamais perdre son âme.",
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    title: "Couscous aux épices du soir",
-    slug: "couscous-aux-epices-du-soir",
-    description: "Un parfum de terre, de mémoire et d’audace. La semoule devient le théâtre d’un récit intime.",
-    image:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    title: "Poisson grillé et agrumes",
-    slug: "poisson-grille-et-agrumes",
-    description: "Le feu, l’élégance et la finesse de la cuisine de bord de mer, sublimés par une acidité vive et franche.",
-    image:
-      "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=1200&q=80",
+    title: "Soupe",
+    slug: "soupe",
+    description:
+      "Une soupe généreuse, profonde et pleine de caractère — pensée comme un récit de famille, entre feu doux et mémoire.",
+    image: CLOUD.bissap,
   },
 ];
 
 const fallbackRecipeHighlights = [
   {
-    title: "Mafé de légumes en version maison",
-    slug: "mafe-de-legumes",
-    excerpt: "Une recette généreuse inspirée des tables de famille.",
-    time: "40 min",
+    title: "Courge — disque rôti au miel, caramel & praliné",
+    slug: "courge-disque-roti-au-miel-caramel-praline",
+    excerpt:
+      "L’expression pure d’un mono-produit : la courge déclinée dans toutes ses textures, sublimée par un rôtissage lent et des notes délicatement acidulées. Ce plat bouscule les évidences : en la privant de ses repères habituels, elle se réinvente tout entière.",
+    time: "1 h 15",
+    difficulty: "Créative",
+    image: CLOUD.courge,
+  },
+  {
+    title: "Thiéré bissap",
+    slug: "tiere-bissap",
+    excerpt:
+      "Le grain de mil roulé à la main, enveloppé d’un voile d’hibiscus. Une respiration acidulée, profonde et vibrante.",
+    time: "45 min",
     difficulty: "Moyenne",
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
+    image: CLOUD.bissap,
   },
   {
-    title: "Riz parfumé au gingembre",
-    slug: "riz-parfume-au-gingembre",
-    excerpt: "Un parfum discret, un grain souple et une texture admirable.",
-    time: "25 min",
-    difficulty: "Facile",
-    image:
-      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=900&q=80",
+    title: "Thiéré tamkharite",
+    slug: "tiere-tamkharite",
+    excerpt:
+      "Un hommage aux tables de fête : les épices douces, la mémoire du mil et la chaleur d’un rituel transmis.",
+    time: "50 min",
+    difficulty: "Moyenne",
+    image: CLOUD.tamkharite,
   },
   {
-    title: "Soupe aux feuilles et okra",
-    slug: "soupe-aux-feuilles-et-okra",
-    excerpt: "Une soupe généreuse, profonde et pleine de caractère.",
+    title: "Mouhamsa choco",
+    slug: "mouhamsa-choco",
+    excerpt:
+      "La galette de mil rencontre le cacao : une gourmandise de mémoire, entre texture fondante et amertume délicate.",
     time: "35 min",
-    difficulty: "Moyenne",
-    image:
-      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80",
+    difficulty: "Facile",
+    image: CLOUD.mouhamsa,
   },
 ];
 
 const fallbackProjects = [
-  { title: "Cérémonie privée à Dakar", category: "Événement", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80" },
-  { title: "Atelier culinaire pour la diaspora", category: "Atelier", image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80" },
-  { title: "Collaboration avec une maison de mode", category: "Partenariat", image: "https://images.unsplash.com/photo-1528712306091-ed0763094c98?auto=format&fit=crop&w=1200&q=80" },
+  { title: "Cérémonie privée à Dakar", category: "Événement", image: CLOUD.tamkharite },
+  { title: "Atelier culinaire pour la diaspora", category: "Atelier", image: CLOUD.courge },
+  { title: "Collaboration avec une maison de mode", category: "Partenariat", image: CLOUD.mouhamsa },
 ];
 
 const fallbackJournalEntries = [
@@ -82,12 +91,12 @@ const fallbackJournalEntries = [
 ];
 
 const fallbackGalleryImages = [
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80",
+  CLOUD.courge,
+  CLOUD.bissap,
+  CLOUD.tamkharite,
+  CLOUD.mouhamsa,
+  CLOUD.hero,
+  CLOUD.courge,
 ];
 
 const socials = [
@@ -95,15 +104,6 @@ const socials = [
   { name: "TikTok", href: "https://tiktok.com" },
   { name: "YouTube", href: "https://youtube.com" },
   { name: "Facebook", href: "https://facebook.com" },
-];
-
-const marqueeWords = [
-  "Gastronomie africaine",
-  "Storytelling",
-  "Innovation",
-  "Authenticité",
-  "Textures raffinées",
-  "Mémoire & modernité",
 ];
 
 export default function Home() {
@@ -118,12 +118,15 @@ export default function Home() {
 
     async function loadHomepageContent() {
       try {
+        // cache: "no-store" → Next.js n'utilise JAMAIS une réponse en cache
+        const fetchOpts: RequestInit = { cache: "no-store" };
+
         const [recipesRes, creationsRes, projectsRes, journalRes, galleryRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/recipes`),
-          fetch(`${API_BASE_URL}/api/creations`),
-          fetch(`${API_BASE_URL}/api/projects`),
-          fetch(`${API_BASE_URL}/api/journal`),
-          fetch(`${API_BASE_URL}/api/gallery`),
+          fetch(`${API_BASE_URL}/api/recipes`, fetchOpts),
+          fetch(`${API_BASE_URL}/api/creations`, fetchOpts),
+          fetch(`${API_BASE_URL}/api/projects`, fetchOpts),
+          fetch(`${API_BASE_URL}/api/journal`, fetchOpts),
+          fetch(`${API_BASE_URL}/api/gallery`, fetchOpts),
         ]);
 
         if (!active) return;
@@ -136,59 +139,62 @@ export default function Home() {
           galleryRes.ok ? galleryRes.json() : Promise.resolve([]),
         ]);
 
-        if (nextCreations.length > 0) {
-          setCreations(
-            nextCreations.map((item: CreationApiItem) => ({
-              title: item.title,
-              description: item.description,
-              slug: item.slug,
-              image: item.image ?? item.cover_image ?? fallbackCreations[0].image,
-            })),
-          );
-        }
+        // On remplace TOUJOURS (même si vide) — plus de mélange fallback/API
+        setCreations(
+          nextCreations.length > 0
+            ? nextCreations.map((item: CreationApiItem) => ({
+                title: item.title,
+                description: item.description,
+                slug: item.slug,
+                image: item.image ?? item.cover_image ?? fallbackCreations[0].image,
+              }))
+            : fallbackCreations,
+        );
 
-        if (recipes.length > 0) {
-          setRecipeHighlights(
-            recipes.slice(0, 3).map((item: RecipeApiItem) => ({
-              title: item.title,
-              slug: item.slug,
-              excerpt: item.excerpt ?? item.content ?? "",
-              time: item.preparation_time ?? "35 min",
-              difficulty: item.difficulty ?? "Moyenne",
-              image: item.cover_image ?? item.og_image ?? fallbackRecipeHighlights[0].image,
-            })),
-          );
-        }
+        setRecipeHighlights(
+          recipes.length > 0
+            ? recipes.slice(0, 4).map((item: RecipeApiItem) => ({
+                title: item.title,
+                slug: item.slug,
+                excerpt: item.excerpt ?? item.content ?? "",
+                time: item.preparation_time ?? "35 min",
+                difficulty: item.difficulty ?? "Moyenne",
+                image: item.cover_image ?? item.og_image ?? fallbackRecipeHighlights[0].image,
+              }))
+            : fallbackRecipeHighlights,
+        );
 
-        if (nextProjects.length > 0) {
-          setProjects(
-            nextProjects.slice(0, 3).map((item: ProjectApiItem) => ({
-              title: item.title,
-              category: item.category ?? "Événement",
-              image: Array.isArray(item.images) ? item.images[0] : item.image ?? fallbackProjects[0].image,
-            })),
-          );
-        }
+        setProjects(
+          nextProjects.length > 0
+            ? nextProjects.slice(0, 3).map((item: ProjectApiItem) => ({
+                title: item.title,
+                category: item.category ?? "Événement",
+                image: Array.isArray(item.images) ? item.images[0] : item.image ?? fallbackProjects[0].image,
+              }))
+            : fallbackProjects,
+        );
 
-        if (nextJournal.length > 0) {
-          setJournalEntries(
-            nextJournal.slice(0, 3).map((item: JournalApiItem) => ({
-              title: item.title,
-              slug: item.slug,
-              date: new Date(item.created_at).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }),
-            })),
-          );
-        }
+        setJournalEntries(
+          nextJournal.length > 0
+            ? nextJournal.slice(0, 3).map((item: JournalApiItem) => ({
+                title: item.title,
+                slug: item.slug,
+                date: new Date(item.created_at).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }),
+              }))
+            : fallbackJournalEntries,
+        );
 
-        if (nextGallery.length > 0) {
-          setGalleryImages(
-            nextGallery.slice(0, 6).map((item: GalleryApiItem) => item.image_url ?? item.video_url ?? fallbackGalleryImages[0]),
-          );
-        }
+        setGalleryImages(
+          nextGallery.length > 0
+            ? nextGallery
+                .slice(0, 6)
+                .map((item: GalleryApiItem) => item.image_url ?? item.video_url ?? fallbackGalleryImages[0])
+            : fallbackGalleryImages,
+        );
       } catch (error) {
         console.warn("Homepage content fallback used:", error);
       }
@@ -207,10 +213,10 @@ export default function Home() {
 
       <main>
         {/* HERO */}
-        <section id="accueil" className="relative isolate overflow-hidden">
-          <div className="absolute inset-0">
+        <section id="accueil" className="relative isolate overflow-hidden bg-[#100d0b]">
+          <div className="absolute inset-0 lg:hidden">
             <Image
-              src="https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790091561/dwavcbbsjey1wuiwyumo.jpg"
+              src={CLOUD.hero}
               alt="Chef préparant une cuisine africaine contemporaine"
               fill
               priority
@@ -220,10 +226,20 @@ export default function Home() {
             <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(10,8,7,0.88)_0%,rgba(10,8,7,0.3)_52%,rgba(10,8,7,0.42)_100%)]" />
           </div>
 
-          <div className="section-shell relative z-10 flex min-h-[86vh] items-end pb-16 pt-32 sm:min-h-[92vh] sm:pb-20 md:pb-24">
-            <div className="max-w-3xl text-[#f8f2ec]">
+          <div className="section-shell relative z-10 grid min-h-[86vh] grid-cols-1 items-end pb-16 pt-20 sm:min-h-[92vh] sm:pb-20 lg:min-h-[88vh] lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-14">
+            <div className="relative hidden h-[68vh] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[#171412] lg:flex">
+              <Image
+                src={CLOUD.hero}
+                alt="Chef préparant une cuisine africaine contemporaine"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-contain"
+              />
+            </div>
 
-              <h1 className="animate-fade-up mt-6 max-w-[12ch] font-display text-[3.6rem] leading-[0.88] text-[#f9f5f1] sm:text-7xl md:text-8xl xl:text-[7.5rem]">
+            <div className="max-w-xl text-[#f8f2ec]">
+              <h1 className="animate-fade-up font-display text-[3.2rem] leading-[0.9] text-[#f9f5f1] sm:text-6xl md:text-7xl xl:text-[5.5rem]">
                 Cheffe Khadidiatou
               </h1>
 
@@ -243,14 +259,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* MARQUEE */}
-        
-
         {/* INTRO */}
         <section id="apropos" className="section-shell py-24 md:py-32">
           <div className="grid gap-10 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
             <div className="reveal">
-              <p className="eyebrow text-[0.68rem] uppercase tracking-[0.28em] text-[#7a6659]">Introduction</p>
+              <p className="eyebrow eyebrow--plain text-[0.68rem] uppercase tracking-[0.28em] text-[#7a6659]">Introduction</p>
               <h2 className="mt-5 max-w-2xl font-display text-5xl leading-[0.9] text-[#111111] md:text-6xl">
                 Une cuisine qui raconte une histoire.
               </h2>
@@ -264,12 +277,7 @@ export default function Home() {
 
           <div className="mt-14 grid gap-8 md:grid-cols-[0.82fr_1.18fr]">
             <div className="reveal relative min-h-[440px] overflow-hidden rounded-[2rem]">
-              <Image
-                src="https://images.unsplash.com/photo-1528712306091-ed0763094c98?auto=format&fit=crop&w=1200&q=80"
-                alt="Portrait de la cheffe"
-                fill
-                className="object-cover"
-              />
+              <Image src={CLOUD.hero} alt="Portrait de la cheffe" fill className="object-cover" />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0a09]/70 to-transparent p-6">
                 <p className="text-[0.6rem] uppercase tracking-[0.3em] text-[#f5efe8]/80">Dakar · Sénégal</p>
               </div>
@@ -298,7 +306,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CRÉATIONS — refonte éditoriale 2 colonnes */}
+        {/* CRÉATIONS */}
         <section id="creations" className="relative bg-[#171412] py-24 text-[#f5efe8] md:py-32">
           <div className="section-shell">
             <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
@@ -310,8 +318,9 @@ export default function Home() {
                   Le goût de <em className="italic text-[#d0a884]">l’empreinte</em>.
                 </h2>
                 <p className="mt-6 max-w-lg text-sm leading-7 text-[#c9bdb0] md:text-base md:leading-8">
-                  Trois plats, trois récits. Chacun porte la trace d’un geste, d’un territoire, d’une mémoire
-                  transmise puis réinventée.
+                  {creations.length === 1
+                    ? "Un plat, un récit. Il porte la trace d’un geste, d’un territoire, d’une mémoire transmise puis réinventée."
+                    : `${creations.length} plats, ${creations.length} récits. Chacun porte la trace d’un geste, d’un territoire, d’une mémoire transmise puis réinventée.`}
                 </p>
               </div>
               <Link
@@ -322,15 +331,17 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Grille 2 colonnes, cartes à hauteur égale */}
-            <div className="mt-16 grid gap-7 lg:grid-cols-2 lg:gap-8">
+            <div
+              className={`mt-16 grid gap-7 ${
+                creations.length === 1 ? "mx-auto max-w-3xl" : "lg:grid-cols-2 lg:gap-8"
+              }`}
+            >
               {creations.map((creation, index) => (
                 <Link
                   href={`/creations/${creation.slug}`}
                   key={creation.title}
                   className="card-lift reveal group relative flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#1c1815] transition-colors duration-700 hover:border-[#d0a884]/35"
                 >
-                  {/* Image */}
                   <div className="relative aspect-[16/11] overflow-hidden">
                     <Image
                       src={creation.image}
@@ -341,7 +352,6 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#14110f]/90 via-[#14110f]/15 to-transparent" />
 
-                    {/* Bandeau haut : numéro + label */}
                     <div className="absolute inset-x-0 top-0 flex items-center justify-between px-7 py-6">
                       <span className="font-display text-xl italic text-[#f5efe8]/75">
                         0{index + 1}
@@ -351,11 +361,9 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Filet doré qui se déploie au hover */}
                     <span className="pointer-events-none absolute bottom-0 left-0 h-px w-0 bg-gradient-to-r from-[#d0a884] to-transparent transition-all duration-700 group-hover:w-full" />
                   </div>
 
-                  {/* Contenu */}
                   <div className="flex flex-1 flex-col p-8 md:p-10">
                     <h3 className="font-display text-3xl leading-[1.05] text-white md:text-[2.4rem]">
                       {creation.title}
@@ -399,12 +407,7 @@ export default function Home() {
             <div className="mt-14 grid gap-6 md:grid-cols-2">
               <div className="reveal overflow-hidden rounded-[2rem]">
                 <div className="relative h-[440px]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80"
-                    alt="Assiette de cuisine créative"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={CLOUD.tamkharite} alt="Assiette de cuisine créative" fill className="object-cover" />
                 </div>
               </div>
               <div className="grid gap-6">
@@ -415,12 +418,7 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="reveal-slow relative h-[260px] overflow-hidden rounded-[2rem]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=1000&q=80"
-                    alt="Décor de plat africain moderne"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={CLOUD.bissap} alt="Décor de plat africain moderne" fill className="object-cover" />
                 </div>
               </div>
             </div>
@@ -479,7 +477,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* JOURNAL — refonte éditoriale */}
+        {/* JOURNAL */}
         <section id="journal" className="relative bg-[#1d1816] py-24 text-[#f5efe8] md:py-32">
           <div className="section-shell">
             <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
@@ -500,7 +498,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Grille magazine avec séparateurs 1px */}
             <div className="reveal mt-16 grid overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 md:grid-cols-2 lg:grid-cols-3">
               {journalEntries.map((entry, index) => (
                 <Link
@@ -513,9 +510,7 @@ export default function Home() {
                   }`}
                 >
                   <div className="flex items-start justify-between gap-6">
-                    <span className="font-display text-xl italic text-[#d0a884]">
-                      N°0{index + 1}
-                    </span>
+                    <span className="font-display text-xl italic text-[#d0a884]">N°0{index + 1}</span>
                     <span className="text-right text-[0.62rem] uppercase tracking-[0.22em] text-[#f5efe8]/55">
                       {entry.date}
                     </span>
@@ -561,7 +556,7 @@ export default function Home() {
           <div className="mt-14 grid auto-rows-[220px] grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {galleryImages.map((image, index) => (
               <div
-                key={image}
+                key={`${image}-${index}`}
                 className={`group relative overflow-hidden rounded-[2rem] ${
                   index === 0 || index === 3 ? "md:row-span-2" : ""
                 } ${index === 2 ? "xl:translate-y-6" : ""}`}
