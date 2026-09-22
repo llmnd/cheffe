@@ -135,7 +135,27 @@ class ContactMessage(BaseModel):
     message: str
 
 
+class ContactMessageRead(ContactMessage):
+    id: int
+    status: str
+    created_at: datetime
+
+
+class ContactMessageUpdate(BaseModel):
+    status: str
+
+
 class MessageResponse(BaseModel):
     status: str
     message: str
     payload: dict
+
+
+class AdminLogin(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

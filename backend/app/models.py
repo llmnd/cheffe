@@ -107,3 +107,16 @@ class Collaboration(Base):
     image = Column(String(255), nullable=True)
     link = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ContactMessageRecord(Base):
+    __tablename__ = "contact_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    phone = Column(String(50), nullable=True)
+    request_type = Column(String(80), default="collaboration", nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(30), default="new", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
