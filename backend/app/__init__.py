@@ -1,0 +1,1 @@
+"""Cheffe Khadidiatou backend package."""
