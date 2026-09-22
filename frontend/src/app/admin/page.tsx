@@ -109,7 +109,7 @@ function itemThumb(item: AdminItem): string | null {
     item.cover_image ??
     item.image ??
     item.image_url ??
-    (Array.isArray(item.images) && item.images[0]) ??
+    (Array.isArray(item.images) ? item.images[0] : null) ??
     item.logo ??
     null
   );
@@ -157,14 +157,12 @@ export default function AdminPage() {
   }, []);
 
   async function request(path: string, options: RequestInit = {}) {
-    const auth = token ? { Authorization: `Bearer ${token}` } : {};
+    const headers = new Headers(options.headers);
+    headers.set("Content-Type", "application/json");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
     return fetch(`${API_BASE_URL}${path}`, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...auth,
-        ...options.headers,
-      },
+      headers,
     });
   }
 

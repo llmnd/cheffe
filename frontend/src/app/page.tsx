@@ -23,9 +23,6 @@ const CLOUD = {
 /*  Filtre des créations : seul ce qui est listé s'affiche            */
 /*  Laisse vide [] pour tout afficher.                                */
 /* ------------------------------------------------------------------ */
-const ALLOWED_CREATION_SLUGS: string[] = ["soupe"];
-
-type CreationApiItem = { title: string; slug: string; description: string; image?: string | null; cover_image?: string | null };
 type RecipeApiItem = { title: string; slug: string; excerpt?: string | null; content?: string | null; preparation_time?: string | null; difficulty?: string | null; cover_image?: string | null; og_image?: string | null };
 type ProjectApiItem = { title: string; category?: string | null; images?: string[] | null; image?: string | null };
 type JournalApiItem = { title: string; slug: string; created_at: string };
@@ -36,17 +33,18 @@ type GalleryApiItem = { image_url?: string | null; video_url?: string | null };
 /* ------------------------------------------------------------------ */
 const fallbackCreations = [
   {
-    title: "Soupe",
-    slug: "soupe",
+    title: "Mouhamsa choco",
+    slug: "mouhamsa-choco",
     description:
-      "Une soupe généreuse, profonde et pleine de caractère — pensée comme un récit de famille, entre feu doux et mémoire.",
-    image: CLOUD.bissap,
+      "La dernière recette publiée : une galette de mil au cacao, entre texture fondante et amertume délicate.",
+    image: CLOUD.mouhamsa,
+    href: "/recettes/mouhamsa-choco",
   },
 ];
 
 const fallbackRecipeHighlights = [
   {
-    title: "Courge — disque rôti au miel, caramel & praliné",
+    title: "Courge, disque rôti au miel, caramel et praliné",
     slug: "courge-disque-roti-au-miel-caramel-praline",
     excerpt:
       "L’expression pure d’un mono-produit : la courge déclinée dans toutes ses textures, sublimée par un rôtissage lent et des notes délicatement acidulées. Ce plat bouscule les évidences : en la privant de ses repères habituels, elle se réinvente tout entière.",
@@ -135,7 +133,7 @@ export default function Home() {
 
         if (!active) return;
 
-        const [recipes, nextCreations, nextProjects, nextJournal, nextGallery] = await Promise.all([
+        const [recipes, , nextProjects, nextJournal, nextGallery] = await Promise.all([
           recipesRes.ok ? recipesRes.json() : Promise.resolve([]),
           creationsRes.ok ? creationsRes.json() : Promise.resolve([]),
           projectsRes.ok ? projectsRes.json() : Promise.resolve([]),
@@ -143,34 +141,26 @@ export default function Home() {
           galleryRes.ok ? galleryRes.json() : Promise.resolve([]),
         ]);
 
-        /* ---------------- CRÉATIONS (avec filtre) ---------------- */
-        const mappedCreations = nextCreations.map((item: CreationApiItem) => ({
-          title: item.title,
-          description: item.description,
-          slug: item.slug,
-          image: item.image ?? item.cover_image ?? fallbackCreations[0].image,
-        }));
-
-        const filteredCreations =
-          ALLOWED_CREATION_SLUGS.length > 0
-            ? mappedCreations.filter((c: { slug: string }) => ALLOWED_CREATION_SLUGS.includes(c.slug))
-            : mappedCreations;
-
-        setCreations(filteredCreations.length > 0 ? filteredCreations : fallbackCreations);
-
         /* ---------------- RECETTES ---------------- */
-        setRecipeHighlights(
-          recipes.length > 0
-            ? recipes.slice(0, 4).map((item: RecipeApiItem) => ({
+        const mappedRecipes = recipes.slice(0, 4).map((item: RecipeApiItem) => ({
                 title: item.title,
                 slug: item.slug,
                 excerpt: item.excerpt ?? item.content ?? "",
                 time: item.preparation_time ?? "35 min",
                 difficulty: item.difficulty ?? "Moyenne",
                 image: item.cover_image ?? item.og_image ?? fallbackRecipeHighlights[0].image,
-              }))
-            : fallbackRecipeHighlights,
-        );
+              }));
+        const nextRecipes = mappedRecipes.length > 0 ? mappedRecipes : fallbackRecipeHighlights;
+        setRecipeHighlights(nextRecipes);
+
+        const latestRecipe = nextRecipes[0];
+        setCreations([{ 
+          title: latestRecipe.title,
+          description: latestRecipe.excerpt,
+          slug: latestRecipe.slug,
+          href: `/recettes/${latestRecipe.slug}`,
+          image: latestRecipe.image,
+        }]);
 
         /* ---------------- PROJETS ---------------- */
         setProjects(
@@ -349,7 +339,7 @@ export default function Home() {
             >
               {creations.map((creation, index) => (
                 <Link
-                  href={`/creations/${creation.slug}`}
+                  href={creation.href ?? `/creations/${creation.slug}`}
                   key={creation.title}
                   className="card-lift reveal group relative flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#1c1815] transition-colors duration-700 hover:border-[#d0a884]/35"
                 >
@@ -368,7 +358,7 @@ export default function Home() {
                         0{index + 1}
                       </span>
                       <span className="text-[0.6rem] uppercase tracking-[0.3em] text-[#f5efe8]/55">
-                        Création
+                        {creation.href?.startsWith("/recettes/") ? "Dernière recette" : "Création"}
                       </span>
                     </div>
 
@@ -384,7 +374,7 @@ export default function Home() {
                     </p>
 
                     <div className="mt-auto flex items-center gap-3 pt-8 text-[0.66rem] uppercase tracking-[0.28em] text-[#f5efe8]/60 transition-colors duration-500 group-hover:text-[#d0a884]">
-                      <span>Découvrir la création</span>
+                      <span>{creation.href?.startsWith("/recettes/") ? "Découvrir la recette" : "Découvrir la création"}</span>
                       <span className="inline-block transition-transform duration-500 group-hover:translate-x-2">
                         →
                       </span>
@@ -473,12 +463,9 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0b0a09]/45 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
                 </div>
                 <div className="p-7">
-                  <div className="flex items-center gap-3">
-                    <span className="h-px w-6 bg-[#8b5e3c]" />
-                    <p className="text-[0.62rem] uppercase tracking-[0.24em] text-[#7a6659]">
-                      {project.category}
-                    </p>
-                  </div>
+                  <p className="text-[0.62rem] uppercase tracking-[0.24em] text-[#7a6659]">
+                    {project.category}
+                  </p>
                   <h3 className="mt-4 font-display text-3xl leading-[1.1] text-[#111111]">
                     {project.title}
                   </h3>
@@ -532,7 +519,7 @@ export default function Home() {
                       {entry.title}
                     </h3>
 
-                    <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
+                    <div className="mt-8 flex items-center justify-between pt-6">
                       <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#f5efe8]/55 transition-colors duration-500 group-hover:text-[#d0a884]">
                         Lire l’article
                       </span>
