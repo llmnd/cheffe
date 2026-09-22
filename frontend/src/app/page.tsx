@@ -6,11 +6,10 @@ import { useEffect, useState } from "react";
 
 import RecipeScrollStory from "@/components/RecipeScrollStory";
 import SiteHeader from "@/components/SiteHeader";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+import { API_BASE_URL } from "@/lib/api";
 
 /* ------------------------------------------------------------------ */
-/*  Images produits Cloudinary (vraies créations, pas de stock)       */
+/*  Images produits Cloudinary                                        */
 /* ------------------------------------------------------------------ */
 const CLOUD = {
   hero: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790092664/oiumaipitkvhi8gflno0.jpg",
@@ -20,6 +19,12 @@ const CLOUD = {
   mouhamsa: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790094081/chxacgqz5pirqhormtrq.jpg",
 };
 
+/* ------------------------------------------------------------------ */
+/*  Filtre des créations : seul ce qui est listé s'affiche            */
+/*  Laisse vide [] pour tout afficher.                                */
+/* ------------------------------------------------------------------ */
+const ALLOWED_CREATION_SLUGS: string[] = ["soupe"];
+
 type CreationApiItem = { title: string; slug: string; description: string; image?: string | null; cover_image?: string | null };
 type RecipeApiItem = { title: string; slug: string; excerpt?: string | null; content?: string | null; preparation_time?: string | null; difficulty?: string | null; cover_image?: string | null; og_image?: string | null };
 type ProjectApiItem = { title: string; category?: string | null; images?: string[] | null; image?: string | null };
@@ -27,7 +32,7 @@ type JournalApiItem = { title: string; slug: string; created_at: string };
 type GalleryApiItem = { image_url?: string | null; video_url?: string | null };
 
 /* ------------------------------------------------------------------ */
-/*  Fallbacks — UNIQUEMENT ce que tu veux voir si l'API est HS        */
+/*  Fallbacks                                                          */
 /* ------------------------------------------------------------------ */
 const fallbackCreations = [
   {
@@ -118,7 +123,6 @@ export default function Home() {
 
     async function loadHomepageContent() {
       try {
-        // cache: "no-store" → Next.js n'utilise JAMAIS une réponse en cache
         const fetchOpts: RequestInit = { cache: "no-store" };
 
         const [recipesRes, creationsRes, projectsRes, journalRes, galleryRes] = await Promise.all([
@@ -139,18 +143,22 @@ export default function Home() {
           galleryRes.ok ? galleryRes.json() : Promise.resolve([]),
         ]);
 
-        // On remplace TOUJOURS (même si vide) — plus de mélange fallback/API
-        setCreations(
-          nextCreations.length > 0
-            ? nextCreations.map((item: CreationApiItem) => ({
-                title: item.title,
-                description: item.description,
-                slug: item.slug,
-                image: item.image ?? item.cover_image ?? fallbackCreations[0].image,
-              }))
-            : fallbackCreations,
-        );
+        /* ---------------- CRÉATIONS (avec filtre) ---------------- */
+        const mappedCreations = nextCreations.map((item: CreationApiItem) => ({
+          title: item.title,
+          description: item.description,
+          slug: item.slug,
+          image: item.image ?? item.cover_image ?? fallbackCreations[0].image,
+        }));
 
+        const filteredCreations =
+          ALLOWED_CREATION_SLUGS.length > 0
+            ? mappedCreations.filter((c: { slug: string }) => ALLOWED_CREATION_SLUGS.includes(c.slug))
+            : mappedCreations;
+
+        setCreations(filteredCreations.length > 0 ? filteredCreations : fallbackCreations);
+
+        /* ---------------- RECETTES ---------------- */
         setRecipeHighlights(
           recipes.length > 0
             ? recipes.slice(0, 4).map((item: RecipeApiItem) => ({
@@ -164,6 +172,7 @@ export default function Home() {
             : fallbackRecipeHighlights,
         );
 
+        /* ---------------- PROJETS ---------------- */
         setProjects(
           nextProjects.length > 0
             ? nextProjects.slice(0, 3).map((item: ProjectApiItem) => ({
@@ -174,6 +183,7 @@ export default function Home() {
             : fallbackProjects,
         );
 
+        /* ---------------- JOURNAL ---------------- */
         setJournalEntries(
           nextJournal.length > 0
             ? nextJournal.slice(0, 3).map((item: JournalApiItem) => ({
@@ -188,6 +198,7 @@ export default function Home() {
             : fallbackJournalEntries,
         );
 
+        /* ---------------- GALERIE ---------------- */
         setGalleryImages(
           nextGallery.length > 0
             ? nextGallery

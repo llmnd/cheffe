@@ -270,3 +270,20 @@ img {
     transition: none;
   }
 }
+/* Panneau admin : scrollbar fine dans le drawer */
+.admin-drawer::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-drawer::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+/* Effet d'apparition du drawer */
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.admin-drawer {
+  animation: slide-in-right 0.4s var(--ease-out-expo) both;
+}

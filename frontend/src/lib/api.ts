@@ -1,4 +1,10 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const isLoopbackUrl = configuredApiUrl?.includes("127.0.0.1") || configuredApiUrl?.includes("localhost");
+
+export const API_BASE_URL =
+  process.env.NODE_ENV === "production" && isLoopbackUrl
+    ? "/_/backend"
+    : configuredApiUrl ?? "http://127.0.0.1:8000";
 
 export type Recipe = {
   id: number;

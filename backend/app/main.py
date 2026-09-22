@@ -29,6 +29,14 @@ from app.seed import seed_demo_data
 
 app = FastAPI(title="Cheffe Khadidiatou API", version="0.1.0")
 
+
+@app.middleware("http")
+async def strip_vercel_service_prefix(request, call_next):
+    prefix = "/_/backend"
+    if request.scope["path"] == prefix or request.scope["path"].startswith(f"{prefix}/"):
+        request.scope["path"] = request.scope["path"][len(prefix):] or "/"
+    return await call_next(request)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
