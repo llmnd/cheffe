@@ -19,6 +19,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
 }
 
 section[id] {
@@ -61,7 +62,7 @@ body {
   font-family: var(--font-body), Arial, sans-serif;
 }
 
-/* Très léger grain, pour une texture papier */
+/* Léger grain papier (desktop uniquement) */
 body::after {
   content: "";
   position: fixed;
@@ -88,17 +89,13 @@ img {
   padding-inline: 1.25rem;
 }
 
-/* Petit label éditorial avec filet */
+/* Petit label éditorial sans filet */
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
 }
-.eyebrow::before {
-  display: none;
-}
-
-/* Variante sans filet (ex : "Introduction") */
+.eyebrow::before,
 .eyebrow--plain::before {
   display: none;
 }
@@ -107,7 +104,7 @@ img {
   box-shadow: 0 18px 50px rgba(17, 17, 17, 0.06);
 }
 
-/* --- Animations --- */
+/* --- Keyframes (desktop) --- */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -132,11 +129,24 @@ img {
   35%  { opacity: 1; }
   100% { transform: translateY(320%); opacity: 0; }
 }
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes hero-mobile-drift {
+  0%, 100% { transform: scale(1.03) translate3d(0, 0, 0); }
+  50% { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
+}
 
-.animate-fade-up { animation: fade-up 1s var(--ease-out-expo) both; }
-.animate-fade-in { animation: fade-in 1.2s var(--ease-out-expo) both; }
-.animate-float   { animation: float-soft 7s ease-in-out infinite; }
+.animate-fade-up   { animation: fade-up 1s var(--ease-out-expo) both; }
+.animate-fade-in   { animation: fade-in 1.2s var(--ease-out-expo) both; }
+.animate-float     { animation: float-soft 7s ease-in-out infinite; }
 .animate-spin-slow { animation: spin-slow 60s linear infinite; }
+.hero-mobile-image { animation: hero-mobile-drift 18s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mobile-image { animation: none; }
+}
 
 /* Bandeau défilant */
 .marquee-track {
@@ -166,17 +176,22 @@ img {
   animation: cue-dot 2.4s ease-in-out infinite;
 }
 
-/* Révélation au scroll (dégradation douce si non supporté) */
-@supports (animation-timeline: view()) {
-  .reveal {
-    animation: fade-up 1s var(--ease-out-expo) both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 26%;
-  }
-  .reveal-slow {
-    animation: fade-up 1.2s var(--ease-out-expo) both;
-    animation-timeline: view();
-    animation-range: entry 0% cover 32%;
+/* Révélation au scroll — DESKTOP uniquement.
+   Retiré de partout ailleurs pour éviter le "saut" au changement
+   de direction sur mobile (animation-timeline: view() recalcule
+   l'état à chaque scroll vers le haut). */
+@media (min-width: 1024px) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: fade-up 1s var(--ease-out-expo) both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 26%;
+    }
+    .reveal-slow {
+      animation: fade-up 1.2s var(--ease-out-expo) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 32%;
+    }
   }
 }
 
@@ -232,18 +247,102 @@ img {
 .recipe-slide.is-visible .recipe-dish { transition-delay: 100ms; }
 .recipe-slide.is-visible .recipe-copy { transition-delay: 220ms; }
 
+/* Admin drawer */
+.admin-drawer::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-drawer::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+.admin-drawer {
+  animation: slide-in-right 0.4s var(--ease-out-expo) both;
+}
+
 @media (min-width: 768px) {
   .section-shell {
     padding-inline: 2rem;
   }
 }
 
-@media (max-width: 767px) {
+/* ===================================================================
+   MOBILE / TABLETTE < 1024px
+   - Toutes les animations sont désactivées
+   - Tous les éléments révélés sont visibles d'emblée
+   - Le scroll reste 100% natif, aucune animation-timeline
+=================================================================== */
+@media (max-width: 1023px) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Désactive toutes les animations décoratives */
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-float,
+  .animate-spin-slow,
+  .marquee-track,
+  .scroll-cue__dot,
+  .admin-drawer {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Éléments "reveal" visibles immédiatement */
+  .reveal,
+  .reveal-slow {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* Cartes statiques sur mobile (pas de lift, pas d'ombres animées) */
+  .card-lift {
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .card-lift:hover {
+    transform: none !important;
+  }
+
+  /* Slides de recettes : affichées sans transition */
+  .recipe-dish,
+  .recipe-copy {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  /* Marqueur du bord du snap plus doux */
+  .recipe-scroll-story {
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+  }
+
+  /* On empêche le navigateur de peindre au-delà des slides */
+  .recipe-slide {
+    contain: layout paint;
+  }
+
+  /* Grain désactivé sur mobile (le `mix-blend-mode: multiply`
+     sur tout l'écran coûte très cher pendant le scroll) */
+  body::after {
+    display: none;
+  }
+
   .section-shell {
     padding-inline: 1rem;
   }
   body {
     overflow-x: hidden;
+  }
+}
+
+/* Tablette uniquement : un peu plus d'air sur les côtés */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .section-shell {
+    padding-inline: 1.5rem;
   }
 }
 
@@ -264,21 +363,4 @@ img {
     transform: none;
     transition: none;
   }
-}
-/* Panneau admin : scrollbar fine dans le drawer */
-.admin-drawer::-webkit-scrollbar {
-  width: 6px;
-}
-.admin-drawer::-webkit-scrollbar-thumb {
-  background: var(--accent-soft);
-  border-radius: 999px;
-}
-
-/* Effet d'apparition du drawer */
-@keyframes slide-in-right {
-  from { transform: translateX(24px); opacity: 0; }
-  to   { transform: translateX(0); opacity: 1; }
-}
-.admin-drawer {
-  animation: slide-in-right 0.4s var(--ease-out-expo) both;
 }

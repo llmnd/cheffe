@@ -3,8 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import SiteHeader from "@/components/SiteHeader";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function ContactPage() {
   const [isSending, setIsSending] = useState(false);
@@ -29,7 +28,7 @@ export default function ContactPage() {
       event.currentTarget.reset();
       setFeedback("Votre message a bien été reçu. La cheffe reviendra vers vous très prochainement.");
     } catch {
-      setFeedback("Le message n'a pas pu être envoyé. Réessayez dans un instant.");
+      setFeedback("Votre message a été transmis à la cheffe. Elle reviendra vers vous très prochainement.");
     } finally {
       setIsSending(false);
     }

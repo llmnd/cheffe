@@ -73,12 +73,12 @@ export default function RecipeScrollStory({ recipes }: RecipeScrollStoryProps) {
         </div>
       </div>
 
-      <div ref={containerRef} className="snap-y snap-mandatory">
+      <div ref={containerRef} className="recipe-scroll-story snap-none overscroll-y-contain md:snap-y md:snap-mandatory">
         {recipes.map((recipe, index) => (
           <article
             data-recipe-slug={recipe.slug}
             key={recipe.slug}
-            className={`recipe-slide relative flex min-h-[78vh] snap-start items-center overflow-hidden border-t border-[#171412]/10 py-16 md:min-h-[84vh] md:py-24 ${
+            className={`recipe-slide relative flex min-h-[78svh] snap-none items-center overflow-hidden border-t border-[#171412]/10 py-16 md:min-h-[84svh] md:snap-start md:py-24 ${
               visibleSlides[recipe.slug] ? "is-visible" : ""
             }`}
           >

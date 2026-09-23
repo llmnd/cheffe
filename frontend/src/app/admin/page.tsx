@@ -77,7 +77,7 @@ const fieldsByType: Record<ContentType, string[]> = {
   gallery: ["image_url", "category"],
   projects: ["title", "slug", "description", "date", "location", "category", "images"],
   collaborations: ["name", "description", "link", "image"],
-  contact: ["status"],
+  contact: ["name", "email", "phone", "request_type", "message", "status"],
 };
 
 const labels: Record<ContentType, string> = {
@@ -88,6 +88,41 @@ const labels: Record<ContentType, string> = {
   projects: "Réalisations",
   collaborations: "Collaborations",
   contact: "Messages",
+};
+
+const fieldLabels: Record<string, string> = {
+  title: "Titre",
+  slug: "Adresse de la page",
+  name: "Nom",
+  email: "Adresse e-mail",
+  phone: "Téléphone",
+  message: "Message",
+  status: "Statut",
+  request_type: "Type de demande",
+  description: "Description",
+  excerpt: "Résumé",
+  content: "Contenu",
+  image: "Image",
+  image_url: "Image",
+  cover_image: "Image de couverture",
+  preparation_time: "Temps de préparation",
+  cooking_time: "Temps de cuisson",
+  difficulty: "Difficulté",
+  ingredients: "Ingrédients",
+  steps: "Étapes",
+  tips: "Conseils",
+  category: "Catégorie",
+  date: "Date",
+  location: "Lieu",
+  images: "Images",
+  logo: "Logo",
+  link: "Lien",
+};
+
+const statusLabels: Record<string, string> = {
+  new: "Nouveau",
+  read: "Lu",
+  archived: "Archivé",
 };
 
 const icons: Record<ContentType, string> = {
@@ -122,8 +157,8 @@ function itemTitle(item: AdminItem): string {
 function itemSubtitle(item: AdminItem): string {
   if (item.slug) return `/${item.slug}`;
   if (item.category) return item.category;
-  if (item.status) return item.status;
-  if (item.request_type) return item.request_type;
+  if (item.status) return statusLabels[item.status] ?? item.status;
+  if (item.request_type) return item.request_type.replaceAll("_", " ");
   if (item.created_at) return new Date(item.created_at).toLocaleDateString("fr-FR");
   return "";
 }
@@ -147,12 +182,26 @@ export default function AdminPage() {
   const [isBusy, setIsBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pendingImages, setPendingImages] = useState<Record<string, File>>({});
+  const [pendingPreviews, setPendingPreviews] = useState<Record<string, string>>({});
 
   /* null = pas encore lu depuis localStorage ; "" = pas de token */
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("cheffe_admin_token") ?? "";
+    let stored = "";
+    try {
+      stored = window.localStorage.getItem("cheffe_admin_token") ?? "";
+    } catch {
+      stored = "";
+    }
+    if (!stored) {
+      stored = document.cookie
+        .split("; ")
+        .find((cookie) => cookie.startsWith("cheffe_admin_token="))
+        ?.split("=")[1] ?? "";
+      stored = decodeURIComponent(stored);
+    }
     setToken(stored);
   }, []);
 
@@ -197,6 +246,8 @@ export default function AdminPage() {
   function openCreate() {
     setEditingId(null);
     setEditor(emptyEditor);
+    setPendingImages({});
+    setPendingPreviews({});
     setStatusMessage("");
     setDrawerOpen(true);
   }
@@ -233,6 +284,8 @@ export default function AdminPage() {
       link: item.link ?? "",
       published: item.published ?? true,
     });
+    setPendingImages({});
+    setPendingPreviews({});
     setStatusMessage("");
     setDrawerOpen(true);
   }
@@ -241,6 +294,8 @@ export default function AdminPage() {
     setDrawerOpen(false);
     setEditingId(null);
     setEditor(emptyEditor);
+    setPendingImages({});
+    setPendingPreviews({});
     setStatusMessage("");
   }
 
@@ -254,52 +309,35 @@ export default function AdminPage() {
     }));
   }
 
-  async function uploadImage(event: ChangeEvent<HTMLInputElement>, targetField?: string) {
+  function selectImage(event: ChangeEvent<HTMLInputElement>, targetField: string) {
     const file = event.target.files?.[0];
     if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setPendingImages((current) => ({ ...current, [targetField]: file }));
+    setPendingPreviews((current) => {
+      if (current[targetField]) URL.revokeObjectURL(current[targetField]);
+      return { ...current, [targetField]: preview };
+    });
+    setStatusMessage("Image sélectionnée. Elle sera envoyée à la création.");
+    event.target.value = "";
+  }
+
+  async function uploadPendingImages(payload: Record<string, unknown>) {
+    if (Object.keys(pendingImages).length === 0) return;
     if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      setStatusMessage("Configuration d’upload manquante.");
-      return;
+      throw new Error("Configuration d’upload manquante.");
     }
 
-    const target =
-      targetField ??
-      (activeType === "creations"
-        ? "image"
-        : activeType === "gallery"
-          ? "image_url"
-          : activeType === "projects"
-            ? "images"
-            : activeType === "collaborations"
-              ? "image"
-              : "cover_image");
-
-    setIsBusy(true);
-    setStatusMessage("Téléversement en cours...");
-    const body = new FormData();
-    body.append("file", file);
-    body.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body },
-      );
-      if (!response.ok) throw new Error();
+    for (const [target, file] of Object.entries(pendingImages)) {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body });
+      if (!response.ok) throw new Error("Import impossible");
       const data = (await response.json()) as { secure_url: string };
-      setEditor((current) => ({
-        ...current,
-        [target]:
-          target === "images"
-            ? `${String(current[target] ?? "")}\n${data.secure_url}`.trim()
-            : data.secure_url,
-      }));
-      setStatusMessage("Image importée. Enregistrez pour publier.");
-    } catch {
-      setStatusMessage("Import impossible. Réessayez.");
-    } finally {
-      setIsBusy(false);
-      event.target.value = "";
+      payload[target] = target === "images"
+        ? [...lines(String(payload[target] ?? "")), data.secure_url]
+        : data.secure_url;
     }
   }
 
@@ -345,6 +383,8 @@ export default function AdminPage() {
 
     const path = editingId ? `/api/${activeType}/${editingId}` : `/api/${activeType}`;
     try {
+      setStatusMessage("Envoi du contenu et de l’image...");
+      await uploadPendingImages(payload);
       const response = await request(path, {
         method: editingId ? "PUT" : "POST",
         body: JSON.stringify(payload),
@@ -377,7 +417,12 @@ export default function AdminPage() {
   }
 
   function logout() {
-    window.localStorage.removeItem("cheffe_admin_token");
+    try {
+      window.localStorage.removeItem("cheffe_admin_token");
+    } catch {
+      // Continue with the cookie fallback when localStorage is unavailable.
+    }
+    document.cookie = "cheffe_admin_token=; Path=/; Max-Age=0; SameSite=Lax";
     router.replace("/login");
   }
 
@@ -399,7 +444,7 @@ export default function AdminPage() {
         <div className="section-shell flex h-[4.5rem] items-center justify-between">
           <div className="flex items-center gap-4">
             <img
-              src="https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790088879/xukgvybzjq3helhwct1l.jpg"
+              src="https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790105611/jb9pawid1l772ui0nnks.jpg"
               alt="Profil de la cheffe"
               className="h-10 w-10 rounded-full object-cover ring-2 ring-[#8b5e3c]/25"
             />
@@ -570,6 +615,11 @@ export default function AdminPage() {
                           {itemSubtitle(item)}
                         </p>
                       )}
+                      {activeType === "contact" && item.message && (
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#40352f]">
+                          {item.message}
+                        </p>
+                      )}
 
                       <div className="mt-4 flex items-center gap-2 border-t border-[#111111]/8 pt-4">
                         <button
@@ -666,34 +716,30 @@ export default function AdminPage() {
                         key={field}
                         className={`${field === "images" ? "sm:col-span-2" : ""} text-[0.62rem] uppercase tracking-[0.18em] text-[#7a6659]`}
                       >
-                        <span>{field.replaceAll("_", " ")}</span>
+                          <span>{fieldLabels[field] ?? field.replaceAll("_", " ")}</span>
                         <div className="mt-2 flex items-center gap-4 rounded-2xl border border-dashed border-[#111111]/20 bg-[#f4efe7] p-4">
-                          {value && field !== "images" && (
+                          {(pendingPreviews[field] || (value && field !== "images")) && (
                             <img
-                              src={value}
+                              src={pendingPreviews[field] ?? value}
                               alt="Aperçu"
                               className="h-20 w-20 rounded-xl object-cover"
                             />
                           )}
                           <label className="inline-flex cursor-pointer items-center rounded-full bg-[#171412] px-4 py-2.5 text-[0.6rem] uppercase tracking-[0.16em] text-[#f8f2ec] transition hover:bg-[#8b5e3c]">
-                            {value ? "Remplacer" : "Choisir une image"}
+                            {value || pendingPreviews[field] ? "Changer l’image" : "Sélectionner une image"}
                             <input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => uploadImage(e, field)}
+                              onChange={(e) => selectImage(e, field)}
                               className="hidden"
                               disabled={isBusy}
                             />
                           </label>
                         </div>
-                        {field === "images" && value && (
-                          <textarea
-                            name={field}
-                            value={value}
-                            onChange={updateField}
-                            rows={3}
-                            className="mt-2 w-full rounded-xl border border-[#111111]/15 bg-[#f4efe7] p-3 text-xs normal-case tracking-normal outline-none"
-                          />
+                        {field === "images" && (value || pendingPreviews[field]) && (
+                          <p className="mt-2 text-xs normal-case tracking-normal text-[#7a6659]">
+                            Aperçu prêt. L’image sera envoyée avec l’enregistrement.
+                          </p>
                         )}
                       </div>
                     );
@@ -704,7 +750,7 @@ export default function AdminPage() {
                       key={field}
                       className={`${isLongText ? "sm:col-span-2" : ""} text-[0.62rem] uppercase tracking-[0.18em] text-[#7a6659]`}
                     >
-                      {field.replaceAll("_", " ")}
+                      {fieldLabels[field] ?? field.replaceAll("_", " ")}
                       {field === "status" ? (
                         <select
                           name={field}
@@ -712,13 +758,14 @@ export default function AdminPage() {
                           onChange={updateField}
                           className="mt-2 w-full rounded-xl border border-[#111111]/15 bg-[#f4efe7] px-3 py-2.5 text-base normal-case tracking-normal outline-none focus:border-[#8b5e3c]"
                         >
-                          <option value="new">Nouveau</option>
-                          <option value="read">Lu</option>
-                          <option value="archived">Archivé</option>
+                          <option value="new">{statusLabels.new}</option>
+                          <option value="read">{statusLabels.read}</option>
+                          <option value="archived">{statusLabels.archived}</option>
                         </select>
                       ) : isLongText ? (
                         <textarea
-                          required={field !== "tips"}
+                          readOnly={activeType === "contact"}
+                          required={field !== "tips" && activeType !== "contact"}
                           name={field}
                           value={value}
                           onChange={updateField}
@@ -727,6 +774,7 @@ export default function AdminPage() {
                         />
                       ) : (
                         <input
+                          readOnly={activeType === "contact"}
                           required={
                             ![
                               "preparation_time",
@@ -757,19 +805,6 @@ export default function AdminPage() {
                       className="h-4 w-4 accent-[#8b5e3c]"
                     />
                     Publier ce contenu
-                  </label>
-                )}
-
-                {activeType !== "contact" && (
-                  <label className="mt-4 inline-flex cursor-pointer items-center rounded-full border border-[#111111]/20 px-5 py-2.5 text-[0.62rem] uppercase tracking-[0.16em] transition hover:border-[#111111]">
-                    {isBusy ? "Traitement…" : "Uploader une image"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => uploadImage(e)}
-                      className="hidden"
-                      disabled={isBusy}
-                    />
                   </label>
                 )}
 

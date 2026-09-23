@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +21,12 @@ export default function LoginPage() {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
       if (!response.ok) throw new Error("Identifiants invalides");
       const data = await response.json();
-      window.localStorage.setItem("cheffe_admin_token", data.access_token);
+      try {
+        window.localStorage.setItem("cheffe_admin_token", data.access_token);
+      } catch {
+        // Safari private browsing can block localStorage; use a same-origin fallback.
+      }
+      document.cookie = `cheffe_admin_token=${encodeURIComponent(data.access_token)}; Path=/; Max-Age=3600; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
       setMessage("Connexion réussie. Votre espace est prêt.");
       router.push("/admin");
     } catch {

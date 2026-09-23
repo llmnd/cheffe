@@ -46,7 +46,7 @@ def seed_demo_data() -> None:
 
         featured_recipes = [
             {
-                "title": "Courge - disque rôti au miel, caramel & praliné",
+                "title": "Courge, disque rôti au miel, caramel & praliné",
                 "slug": "courge-disque-roti-au-miel-caramel-praline",
                 "excerpt": "La courge déclinée dans toutes ses textures, entre rôtissage lent, douceur du miel et éclat du praliné.",
                 "content": "Un plat autour d'un seul produit, travaillé comme une composition : la courge devient fondante, caramélisée et délicatement acidulée.",

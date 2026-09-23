@@ -19,10 +19,8 @@ const CLOUD = {
   mouhamsa: "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790094081/chxacgqz5pirqhormtrq.jpg",
 };
 
-/* ------------------------------------------------------------------ */
-/*  Filtre des créations : seul ce qui est listé s'affiche            */
-/*  Laisse vide [] pour tout afficher.                                */
-/* ------------------------------------------------------------------ */
+const CHEFFE_PROFILE_IMAGE = "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790105611/jb9pawid1l772ui0nnks.jpg";
+
 type RecipeApiItem = { title: string; slug: string; excerpt?: string | null; content?: string | null; preparation_time?: string | null; difficulty?: string | null; cover_image?: string | null; og_image?: string | null };
 type ProjectApiItem = { title: string; category?: string | null; images?: string[] | null; image?: string | null };
 type JournalApiItem = { title: string; slug: string; created_at: string };
@@ -82,10 +80,13 @@ const fallbackRecipeHighlights = [
 ];
 
 const fallbackProjects = [
-  { title: "Cérémonie privée à Dakar", category: "Événement", image: CLOUD.tamkharite },
-  { title: "Atelier culinaire pour la diaspora", category: "Atelier", image: CLOUD.courge },
   { title: "Collaboration avec une maison de mode", category: "Partenariat", image: CLOUD.mouhamsa },
 ];
+
+const hiddenProjectSlugs = new Set([
+  "ceremonie-privee-a-dakar",
+  "atelier-culinaire-pour-la-diaspora",
+]);
 
 const fallbackJournalEntries = [
   { title: "Des épices qui racontent des familles", slug: "epices-qui-racontent-des-familles", date: "14 mars 2026" },
@@ -101,13 +102,12 @@ const fallbackGalleryImages = [
   CLOUD.hero,
   CLOUD.courge,
 ];
+const instagramMosaicImages = [CLOUD.courge, CLOUD.bissap, CLOUD.tamkharite, CLOUD.mouhamsa];
 
 const socials = [
-  { name: "Instagram", href: "https://instagram.com" },
-  { name: "TikTok", href: "https://tiktok.com" },
-  { name: "YouTube", href: "https://youtube.com" },
-  { name: "Facebook", href: "https://facebook.com" },
+  { name: "Instagram", href: "https://www.instagram.com/cheffe_khadidiatou?stkn=MWVrMGRpZm1tbnNiZQ==" },
 ];
+const courgeInstagramUrl = "https://www.instagram.com/p/Dc9a0TbDfLv/?stkn=MXJjdXk0enFtMmZycw==";
 
 export default function Home() {
   const [creations, setCreations] = useState(fallbackCreations);
@@ -143,29 +143,32 @@ export default function Home() {
 
         /* ---------------- RECETTES ---------------- */
         const mappedRecipes = recipes.slice(0, 4).map((item: RecipeApiItem) => ({
-                title: item.title,
-                slug: item.slug,
-                excerpt: item.excerpt ?? item.content ?? "",
-                time: item.preparation_time ?? "35 min",
-                difficulty: item.difficulty ?? "Moyenne",
-                image: item.cover_image ?? item.og_image ?? fallbackRecipeHighlights[0].image,
-              }));
+          title: item.title.replace(" - ", ", "),
+          slug: item.slug,
+          excerpt: item.excerpt ?? item.content ?? "",
+          time: item.preparation_time ?? "35 min",
+          difficulty: item.difficulty ?? "Moyenne",
+          image: item.cover_image ?? item.og_image ?? fallbackRecipeHighlights[0].image,
+        }));
         const nextRecipes = mappedRecipes.length > 0 ? mappedRecipes : fallbackRecipeHighlights;
         setRecipeHighlights(nextRecipes);
 
         const latestRecipe = nextRecipes[0];
-        setCreations([{ 
-          title: latestRecipe.title,
-          description: latestRecipe.excerpt,
-          slug: latestRecipe.slug,
-          href: `/recettes/${latestRecipe.slug}`,
-          image: latestRecipe.image,
-        }]);
+        setCreations([
+          {
+            title: latestRecipe.title,
+            description: latestRecipe.excerpt,
+            slug: latestRecipe.slug,
+            href: `/recettes/${latestRecipe.slug}`,
+            image: latestRecipe.image,
+          },
+        ]);
 
         /* ---------------- PROJETS ---------------- */
+        const visibleProjects = nextProjects.filter((item: ProjectApiItem) => !hiddenProjectSlugs.has(item.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")));
         setProjects(
-          nextProjects.length > 0
-            ? nextProjects.slice(0, 3).map((item: ProjectApiItem) => ({
+          visibleProjects.length > 0
+            ? visibleProjects.slice(0, 3).map((item: ProjectApiItem) => ({
                 title: item.title,
                 category: item.category ?? "Événement",
                 image: Array.isArray(item.images) ? item.images[0] : item.image ?? fallbackProjects[0].image,
@@ -221,14 +224,18 @@ export default function Home() {
               alt="Chef préparant une cuisine africaine contemporaine"
               fill
               priority
-              className="object-cover"
+              className="hero-mobile-image object-cover"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,8,7,0.9)_0%,rgba(10,8,7,0.64)_42%,rgba(10,8,7,0.24)_100%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(10,8,7,0.88)_0%,rgba(10,8,7,0.3)_52%,rgba(10,8,7,0.42)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(10,8,7,0.96)_0%,rgba(10,8,7,0.54)_48%,rgba(10,8,7,0.48)_100%)]" />
           </div>
 
-          <div className="section-shell relative z-10 grid min-h-[86vh] grid-cols-1 items-end pb-16 pt-20 sm:min-h-[92vh] sm:pb-20 lg:min-h-[88vh] lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-14">
-            <div className="relative hidden h-[68vh] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[#171412] lg:flex">
+          {/*
+            Mobile : hauteur fixe en px → aucun recalcul quand la barre
+            d'URL apparaît/disparaît. Desktop : svh (stable, jamais recalculé).
+          */}
+          <div className="section-shell relative z-10 grid min-h-[640px] grid-cols-1 items-end pb-16 pt-20 sm:min-h-[760px] sm:pb-20 lg:min-h-[88svh] lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-14">
+            <div className="relative hidden w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[#171412] lg:flex lg:min-h-[560px] lg:h-[68svh]">
               <Image
                 src={CLOUD.hero}
                 alt="Chef préparant une cuisine africaine contemporaine"
@@ -278,7 +285,7 @@ export default function Home() {
 
           <div className="mt-14 grid gap-8 md:grid-cols-[0.82fr_1.18fr]">
             <div className="reveal relative min-h-[440px] overflow-hidden rounded-[2rem]">
-              <Image src={CLOUD.hero} alt="Portrait de la cheffe" fill className="object-cover" />
+              <Image src={CHEFFE_PROFILE_IMAGE} alt="Portrait de la cheffe" fill className="object-cover" />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0a09]/70 to-transparent p-6">
                 <p className="text-[0.6rem] uppercase tracking-[0.3em] text-[#f5efe8]/80">Dakar · Sénégal</p>
               </div>
@@ -362,7 +369,6 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <span className="pointer-events-none absolute bottom-0 left-0 h-px w-0 bg-gradient-to-r from-[#d0a884] to-transparent transition-all duration-700 group-hover:w-full" />
                   </div>
 
                   <div className="flex flex-1 flex-col p-8 md:p-10">
@@ -374,7 +380,9 @@ export default function Home() {
                     </p>
 
                     <div className="mt-auto flex items-center gap-3 pt-8 text-[0.66rem] uppercase tracking-[0.28em] text-[#f5efe8]/60 transition-colors duration-500 group-hover:text-[#d0a884]">
-                      <span>{creation.href?.startsWith("/recettes/") ? "Découvrir la recette" : "Découvrir la création"}</span>
+                      <span>
+                        {creation.href?.startsWith("/recettes/") ? "Découvrir la recette" : "Découvrir la création"}
+                      </span>
                       <span className="inline-block transition-transform duration-500 group-hover:translate-x-2">
                         →
                       </span>
@@ -587,18 +595,47 @@ export default function Home() {
                   Suivre son univers.
                 </h2>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {socials.map((social) => (
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {instagramMosaicImages.map((image, index) => (
                   <a
-                    key={social.name}
-                    href={social.href}
+                    key={`${image}-${index}`}
+                    href={index === 0 ? courgeInstagramUrl : socials[0].href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-[#111111]/15 px-4 py-2 text-[0.62rem] uppercase tracking-[0.2em] text-[#111111] transition hover:border-[#111111] hover:bg-[#111111] hover:text-[#f8f2eb]"
+                    aria-label={`Voir la photo ${index + 1} sur Instagram`}
+                    className="group relative aspect-square overflow-hidden rounded-[1.25rem] bg-[#e8ddd1]"
                   >
-                    {social.name}
+                    <Image
+                      src={image}
+                      alt=""
+                      fill
+                      sizes="(max-width: 1024px) 45vw, 20vw"
+                      className="object-cover transition duration-700 group-hover:scale-105"
+                    />
+                    <span className="absolute inset-0 bg-[#111111]/0 transition group-hover:bg-[#111111]/20" />
                   </a>
                 ))}
+                <a
+                  href={socials[0].href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Suivre Cheffe Khadidiatou sur Instagram"
+                  className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-[#111111]/15 px-4 py-3 text-[0.62rem] uppercase tracking-[0.2em] text-[#111111] transition hover:border-[#111111] hover:bg-[#111111] hover:text-[#f8f2eb]"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#E1306C"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="1" fill="#E1306C" stroke="none" />
+                  </svg>
+                  <span>Instagram</span>
+                </a>
               </div>
             </div>
 
@@ -628,6 +665,22 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-[#111111]/10 bg-[#171412] text-[#f5efe8]">
+        <div className="section-shell flex flex-col gap-5 py-8 text-sm md:flex-row md:items-center md:justify-between">
+          <p className="font-display text-2xl">Cheffe Khadidiatou</p>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[0.62rem] uppercase tracking-[0.2em] text-[#f5efe8]/65">
+            <Link href="#accueil" className="transition hover:text-[#d0a884]">Accueil</Link>
+            <Link href="#creations" className="transition hover:text-[#d0a884]">Créations</Link>
+            <Link href="#journal" className="transition hover:text-[#d0a884]">Journal</Link>
+            <Link href="/contact" className="transition hover:text-[#d0a884]">Contact</Link>
+            <Link href="/conditions" className="transition hover:text-[#d0a884]">Conditions</Link>
+            <Link href="/confidentialite" className="transition hover:text-[#d0a884]">Confidentialité</Link>
+            <Link href="/securite" className="transition hover:text-[#d0a884]">Sécurité</Link>
+          </nav>
+          <p className="text-xs text-[#f5efe8]/45">© {new Date().getFullYear()} Tous droits réservés</p>
+        </div>
+      </footer>
     </div>
   );
 }

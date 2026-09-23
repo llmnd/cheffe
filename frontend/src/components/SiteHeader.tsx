@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const CHEFFE_PROFILE_IMAGE = process.env.NEXT_PUBLIC_CHEFFE_PROFILE_IMAGE;
+const CHEFFE_PROFILE_IMAGE = "https://res.cloudinary.com/dcs9vkwe0/image/upload/v1790105611/jb9pawid1l772ui0nnks.jpg";
 
 const navItems = [
   { href: "/", label: "Accueil" },

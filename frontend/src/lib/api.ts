@@ -1,10 +1,20 @@
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
-const isLoopbackUrl = configuredApiUrl?.includes("127.0.0.1") || configuredApiUrl?.includes("localhost");
+const serverProductionApiUrl = "https://cheffe-chi.vercel.app/_/backend";
+const isLocalApiUrl = configuredApiUrl?.includes("127.0.0.1") || configuredApiUrl?.includes("localhost");
 
-export const API_BASE_URL =
-  process.env.NODE_ENV === "production" && isLoopbackUrl
-    ? "/_/backend"
-    : configuredApiUrl ?? "http://127.0.0.1:8000";
+function resolveApiBaseUrl() {
+  if (process.env.NODE_ENV === "production") {
+    return typeof window === "undefined" ? serverProductionApiUrl : "/_/backend";
+  }
+
+  if (isLocalApiUrl && typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return "/_/backend";
+  }
+
+  return configuredApiUrl ?? "";
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export type Recipe = {
   id: number;
